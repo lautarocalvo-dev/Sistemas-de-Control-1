@@ -1,0 +1,73 @@
+=======================================================================
+               MIS COMANDOS DE GIT - GUÍA RÁPIDA (FACULTAD)
+=======================================================================
+
+--- 📥 PARA BAJAR CAMBIOS (Lo primero que hacés al sentarte en la PC) ---
+
+git pull origin main
+• Qué hace: Trae los archivos más nuevos desde GitHub y actualiza tu PC.
+• Cómo se usa: Lo ejecutás APENAS abrís la carpeta para asegurarte de 
+  no trabajar sobre código viejo que hayas subido desde la otra computadora.
+  (Nota: Si en Sistemas de Control cambiaste "origin" por "SC1", usás: 
+  git pull SC1 main)
+
+
+--- 🚀 PARA SUBIR CAMBIOS (Lo que hacés antes de apagar la PC) ---
+
+1. git status
+• Qué hace: Te muestra en rojo qué archivos modificaste o agregaste nuevos.
+• Cómo se usa: Es opcional, sirve para dar un vistazo antes de guardar.
+
+2. git add .
+• Qué hace: Selecciona TODOS los archivos y cambios de la carpeta (el punto
+  significa "todo"). Deja listo el paquete para ser guardado.
+• Cómo se usa: Lo ejecutás después de haber programado o simulado. Si te 
+  tira carteles de "LF will be replaced by CRLF", los ignorás, está todo bien.
+
+3. git commit -m "Mensaje corto de lo que hiciste"
+• Qué hace: Cierra el paquete de cambios en tu computadora y le pone una 
+  etiqueta con el mensaje que escribas entre comillas para acordarte qué hiciste.
+• Cómo se usa: Reemplazá el texto entre comillas por algo útil, por ejemplo:
+  git commit -m "Termino laboratorio 1 de octave" o "Agrego circuito lm7809".
+
+4. git push origin main
+• Qué hace: Empuja el paquete que guardaste y lo sube definitivo a GitHub.
+• Cómo se usa: Es el comando final. Una vez que termina de cargar, ya podés
+  apagar la compu tranquilo porque tus archivos están a salvo en internet.
+  (Nota: Si en Sistemas de Control cambiaste "origin" por "SC1", usás:
+  git push SC1 main)
+
+
+--- 🛠️ COMANDOS SALVAVIDAS (Por si algo sale mal) ---
+
+git log --oneline
+• Qué hace: Te muestra una lista compacta de todos los commits (guardados) 
+  que hiciste en el pasado, con sus mensajes y fechas.
+• Cómo se usa: Sirve para controlar qué subiste o ver el historial si no te 
+  acordás en qué día cambiaste algo. Para salir de esa lista, presioná la tecla Q.
+
+git checkout -- nombre-archivo.asc
+• Qué hace: Borra los cambios que hayas hecho en un archivo y lo devuelve a 
+  como estaba en tu último commit guardado.
+• Cómo se usa: Ideal si estabas tocando un circuito en LTSpice o un código en 
+  Octave, rompiste todo, no sabés cómo arreglarlo y querés volver a empezar de cero.
+
+
+--- 📂 PARA MOVERTE EN LA CONSOLA (Git Bash) ---
+
+cd ~
+• Qué hace: Te lleva a la carpeta principal de tu usuario.
+
+cd Desktop/
+• Qué hace: Te mete adentro del Escritorio.
+
+cd ..
+• Qué hace: Te saca de la carpeta actual y te vuelve una carpeta para atrás.
+
+ls -a
+• Qué hace: Te lista TODO lo que hay dentro de la carpeta donde estás parado, 
+  incluyendo archivos ocultos (como la configuración de Git o el .gitignore).
+
+clear
+• Qué hace: Limpia toda la pantalla de la consola cuando se te llena de texto y 
+  comandos viejos, dejándola vacía y prolija otra vez.
