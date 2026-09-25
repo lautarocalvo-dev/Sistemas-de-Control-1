@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Laboratorio Interactivo de Control - Plano S</title>
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; }
+        h2 { color: #1e3a8a; text-align: center; }
+        .container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .controls { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 300px; }
+        .plots { display: flex; gap: 10px; flex-grow: 1; flex-wrap: wrap; justify-content: center; }
+        .plot-card { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        label { font-weight: bold; display: block; margin-top: 10px; font-size: 0.9em; }
+        input[type=range] { width: 100%; }
+        .val { color: #2563eb; float: right; }
+        .info-box { background: #eff6ff; border-left: 4px solid #2563eb; padding: 10px; margin-top: 15px; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+
+<h2>Simulador de Dominio $s$ y Respuesta Temporal $c(t)$</h2>
+
+<div class="container">
+    <div class="controls">
+        <h3>Parámetros</h3>
+        
+        <label>Tipo de Polos:</label>
+        <select id="poleType" onchange="update()">
+            <option value="complex">Complejos Conjugados (-σ ± jωd)</option>
+            <option value="real">Reales Independientes (p1, p2)</option>
+        </select>
+
+        <div id="complexControls">
+            <label>Parte Real Polos (-σ): <span class="val" id="sigmaVal">-1.0</span></label>
+            <input type="range" id="sigma" min="0.1" max="5.0" step="0.1" value="1.0" oninput="update()">
+
+            <label>Frecuencia Oscilatoria (ωd): <span class="val" id="wdVal">3.0</span></label>
+            <input type="range" id="wd" min="0.0" max="10.0" step="0.2" value="3.0" oninput="update()">
+        </div>
+
+        <div id="realControls" style="display:none;">
+            <label>Polo 1 (p1): <span class="val" id="p1Val">-1.0</span></label>
+            <input type="range" id="p1" min="-10.0" max="-0.1" step="0.1" value="-1.0" oninput="update()">
+
+            <label>Polo 2 (p2): <span class="val" id="p2Val">-5.0</span></label>
+            <input type="range" id="p2" min="-10.0" max="-0.1" step="0.1" value="-5.0" oninput="update()">
+        </div>
+
+        <hr>
+
+        <label><input type="checkbox" id="enableZero" onchange="update()" checked> Activar Cero (s = -z)</label>
+        
+        <label>Posición del Cero (z): <span class="val" id="zVal">-2.0</span></label>
+        <input type="range" id="z" min="-10.0" max="10.0" step="0.2" value="-2.0" oninput="update()">
+
+        <div class="info-box" id="info"></div>
+    </div>
+
+    <div class="plots">
+        <div class="plot-card"><div id="sPlanePlot" style="width:420px;height:400px;"></div></div>
+        <div class="plot-card"><div id="timePlot" style="width:500px;height:400px;"></div></div>
+    </div>
+</div>
+
+<script>
+function update() {
+    let poleType = document.getElementById('poleType').value;
+    document.getElementById('complexControls').style.display = (poleType === 'complex') ? 'block' : 'none';
+    document.getElementById('realControls').style.display = (poleType === 'real') ? 'block' : 'none';
+
+    let sigma = parseFloat(document.getElementById('sigma').value);
+    let wd = parseFloat(document.getElementById('wd').value);
+    let p1_val = parseFloat(document.getElementById('p1').value);
+    let p2_val = parseFloat(document.getElementById('p2').value);
+    let enableZero = document.getElementById('enableZero').checked;
+    let z_val = parseFloat(document.getElementById('z').value);
+
+    document.getElementById('sigmaVal').innerText = (-sigma).toFixed(1);
+    document.getElementById('wdVal').innerText = wd.toFixed(1);
+    document.getElementById('p1Val').innerText = p1_val.toFixed(1);
+    document.getElementById('p2Val').innerText = p2_val.toFixed(1);
+    document.getElementById('zVal').innerText = z_val.toFixed(1);
+
+    let p1_re, p1_im, p2_re, p2_im;
+    if (poleType === 'complex') {
+        p1_re = -sigma; p1_im = wd;
+        p2_re = -sigma; p2_im = -wd;
+    } else {
+        p1_re = p1_val; p1_im = 0;
+        p2_re = p2_val; p2_im = 0;
+    }
+
+    // Coeficientes Denominador: s^2 + a1*s + a0
+    let a1 = -(p1_re + p2_re);
+    let a0 = (p1_re * p2_re) - (p1_im * p2_im);
+
+    // Coeficientes Numerador (Ganancia estática = 1)
+    let A = 0, B = a0;
+    if (enableZero && Math.abs(z_val) > 0.01) {
+        A = -a0 / z_val;
+        B = a0;
+    }
+
+    // Info Text
+    let infoStr = `<b>Análisis de Criterio:</b><br>`;
+    if (enableZero) {
+        if (z_val > 0) infoStr += `⚠️ <b>Cero en Semiplano Derecho (s = +${z_val}):</b> Fase no mínima (caída inicial).<br>`;
+        else if (Math.abs(z_val) < Math.abs(p1_re)) infoStr += `🚀 <b>Cero Dominante:</b> Gran sobrepaso inicial por pendiente elevadísima.<br>`;
+        else if (Math.abs(z_val) > 5 * Math.abs(p1_re)) infoStr += `💤 <b>Cero Lejano:</b> Su efecto en la curva es prácticamente despreciable.<br>`;
+    }
+    document.getElementById('info').innerHTML = infoStr;
+
+    // Plot Plano S
+    let sTraces = [
+        { x: [p1_re, p2_re], y: [p1_im, p2_im], mode: 'markers', marker: {symbol: 'x', size: 14, color: 'red'}, name: 'Polos' }
+    ];
+    if (enableZero) {
+        sTraces.push({ x: [z_val], y: [0], mode: 'markers', marker: {symbol: 'circle-open', size: 14, color: 'blue', width: 3}, name: 'Cero' });
+    }
+
+    let sLayout = {
+        title: 'Plano s (Complejo)',
+        xaxis: {title: 'Eje Real (σ)', range: [-12, 12], zeroline: true, zerolinecolor: '#888'},
+        yaxis: {title: 'Eje Imaginario (jω)', range: [-12, 12], zeroline: true, zerolinecolor: '#888'},
+        showlegend: false
+    };
+    Plotly.newPlot('sPlanePlot', sTraces, sLayout);
+
+    // Simulación RK4 de c(t)
+    let tmax = Math.max(6, 5 / Math.abs(p1_re));
+    let dt = tmax / 400;
+    let t_arr = [], y_arr = [];
+    let x1 = 0, x2 = A;
+
+    for (let i = 0; i < 400; i++) {
+        t_arr.push(i * dt);
+        y_arr.push(x1);
+
+        let f1 = (x1, x2) => x2;
+        let f2 = (x1, x2) => B - a1*x2 - a0*x1;
+
+        let k1_1 = f1(x1, x2), k1_2 = f2(x1, x2);
+        let k2_1 = f1(x1 + 0.5*dt*k1_1, x2 + 0.5*dt*k1_2), k2_2 = f2(x1 + 0.5*dt*k1_1, x2 + 0.5*dt*k1_2);
+        let k3_1 = f1(x1 + 0.5*dt*k2_1, x2 + 0.5*dt*k2_2), k3_2 = f2(x1 + 0.5*dt*k2_1, x2 + 0.5*dt*k2_2);
+        let k4_1 = f1(x1 + dt*k3_1, x2 + dt*k3_2), k4_2 = f2(x1 + dt*k3_1, x2 + dt*k3_2);
+
+        x1 += (dt/6)*(k1_1 + 2*k2_1 + 2*k3_1 + k4_1);
+        x2 += (dt/6)*(k1_2 + 2*k2_2 + 2*k3_2 + k4_2);
+    }
+
+    let timeTrace = [
+        { x: t_arr, y: y_arr, mode: 'lines', line: {color: '#2563eb', width: 2.5}, name: 'c(t)' },
+        { x: [0, tmax], y: [1, 1], mode: 'lines', line: {dash: 'dash', color: '#888'}, name: 'Entrada Escalón' }
+    ];
+
+    let timeLayout = {
+        title: 'Respuesta al Escalón c(t)',
+        xaxis: {title: 'Tiempo (s)'},
+        yaxis: {title: 'Salida c(t)'},
+        showlegend: false
+    };
+    Plotly.newPlot('timePlot', timeTrace, timeLayout);
+}
+
+update();
+</script>
+</body>
+</html>
